@@ -1,0 +1,10 @@
+# Normalise line endings so Windows and Unix checkouts do not produce
+# whitespace-only diffs.
+* text=auto eol=lf
+
+# Binary and generated files
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+package-lock.json -diff linguist-generated
