@@ -1,41 +1,39 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 
-import { navigation } from "@/config/navigation";
-import { siteConfig } from "@/config/site";
+import { AppHeader } from "@/components/layout/app-header";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
+/** Cookie written by SidebarProvider when the user collapses or expands it. */
+const SIDEBAR_COOKIE = "sidebar_state";
 
 /**
- * Minimal shell shared by every dashboard route.
+ * Application shell shared by every dashboard route.
  *
- * Phase 2 replaces this with the real application shell (collapsible sidebar,
- * header, breadcrumbs and mobile drawer). For now it only provides a container
- * and plain navigation so every route is reachable and the layout boundary
- * already exists where Phase 2 needs it.
+ * The sidebar's collapsed state is read from its cookie here and passed as
+ * `defaultOpen`, because SidebarProvider only *writes* that cookie — without
+ * this, a user who collapsed the sidebar would see it render expanded and then
+ * snap shut after hydration.
+ *
+ * Because Cache Components is enabled, reading the cookie does not cost the
+ * static prerender: these routes build as Partial Prerender, so the shell is
+ * still served as static HTML and only the cookie-dependent part streams in.
  */
-export default function DashboardLayout({ children }: LayoutProps<"/">) {
-  return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <Link href="/" className="font-semibold tracking-tight">
-            {siteConfig.shortName}
-          </Link>
-          <nav aria-label="Main" className="flex flex-wrap gap-x-4 gap-y-1">
-            {navigation.flatMap((section) =>
-              section.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                >
-                  {item.title}
-                </Link>
-              )),
-            )}
-          </nav>
-        </div>
-      </header>
+export default async function DashboardLayout({ children }: LayoutProps<"/">) {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get(SIDEBAR_COOKIE)?.value !== "false";
 
-      <div className="mx-auto max-w-6xl px-4 py-6">{children}</div>
-    </div>
+  return (
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <AppSidebar />
+      {/* SidebarInset already renders a <main>, so it carries the skip-link
+          target itself. Wrapping the children in a second <main> nested one
+          inside the other is invalid HTML — the browser reparents it and
+          hydration then mismatches. The padding wrapper is a plain div. */}
+      <SidebarInset id="main-content">
+        <AppHeader />
+        <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

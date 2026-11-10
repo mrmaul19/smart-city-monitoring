@@ -11,11 +11,12 @@ const nextConfig: NextConfig = {
     // Traffic camera snapshots are referenced from this host.
     //
     // IMPORTANT: these snapshots must NOT go through Vercel's image
-    // optimizer. Each snapshot URL carries a fresh UUID roughly every minute,
-    // so every refresh counts as a new source image. Vercel's Hobby plan
-    // allows 5,000 transformations per month and cannot buy more, so a single
-    // visitor watching the camera page would exhaust the quota within hours,
-    // after which Vercel returns HTTP 402 and the images stop rendering.
+    // optimizer. Each snapshot URL carries a fresh UUID every 5 minutes, so
+    // every new snapshot counts as a new source image: 8 cameras x 12
+    // publications an hour is ~96 source images an hour. Vercel's Hobby plan
+    // allows 5,000 transformations per month and cannot buy more, so roughly
+    // two days of continuous viewing would exhaust it, after which Vercel
+    // returns HTTP 402 and the images stop rendering.
     //
     // Snapshots are therefore rendered with a plain <img> element. This entry
     // exists only so the host is explicitly allow-listed if a future, genuinely

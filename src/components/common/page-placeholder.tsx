@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 
+import { PageHeader } from "@/components/common/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -30,25 +31,19 @@ interface PagePlaceholderProps {
 export function PagePlaceholder({
   title,
   description,
-  icon: Icon,
+  icon,
   phase,
   planned,
   source,
 }: PagePlaceholderProps) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
-          <Icon className="size-5" aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-        <Badge variant="outline" className="ml-auto shrink-0">
-          {phase}
-        </Badge>
-      </div>
+    <>
+      <PageHeader
+        title={title}
+        description={description}
+        icon={icon}
+        actions={<Badge variant="outline">{phase}</Badge>}
+      />
 
       <Card>
         <CardHeader>
@@ -84,6 +79,6 @@ export function PagePlaceholder({
           ) : null}
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

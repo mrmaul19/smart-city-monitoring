@@ -17,7 +17,7 @@ export const API_ENDPOINTS = {
 
 /**
  * Camera snapshots are rendered with a plain <img> element, never through
- * next/image. Their URLs change every minute, so the Vercel image optimizer
+ * next/image. Their URLs change every 5 minutes, so the Vercel image optimizer
  * would treat each refresh as a new source image and exhaust the Hobby plan's
  * monthly transformation quota. See the images note in next.config.ts.
  */
@@ -35,8 +35,13 @@ export const REVALIDATE = {
   weather: 600,
   /** Air quality is published hourly. */
   airQuality: 900,
-  /** Traffic snapshots rotate about once a minute. */
-  cameras: 60,
+  /**
+   * Traffic snapshots are republished every 300s — measured, not assumed.
+   * Caching for less than that only adds requests without newer images;
+   * caching for the full 300s would risk serving one almost 10 minutes old,
+   * so this sits deliberately below the publication interval.
+   */
+  cameras: 120,
   /** Place lookups are effectively static. */
   geocoding: 86_400,
 } as const;

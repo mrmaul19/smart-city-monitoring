@@ -9,29 +9,29 @@ entirely on free, keyless public APIs and deployable to Vercel Hobby.
 
 ## Tech stack
 
-| Concern | Choice |
-| --- | --- |
-| Framework | Next.js 16 (App Router, React Server Components, Cache Components) |
-| Language | TypeScript, `strict` + `noUncheckedIndexedAccess` |
-| Styling | Tailwind CSS v4, shadcn/ui (`radix-nova` style), Lucide icons |
-| Server state | TanStack Query v5 |
-| Client state | Zustand (persisted to `localStorage`) |
-| Charts | Recharts |
-| Maps | Leaflet + React Leaflet + OpenStreetMap tiles |
-| Validation | Zod |
-| Notifications | Sonner |
+| Concern       | Choice                                                             |
+| ------------- | ------------------------------------------------------------------ |
+| Framework     | Next.js 16 (App Router, React Server Components, Cache Components) |
+| Language      | TypeScript, `strict` + `noUncheckedIndexedAccess`                  |
+| Styling       | Tailwind CSS v4, shadcn/ui (`radix-nova` style), Lucide icons      |
+| Server state  | TanStack Query v5                                                  |
+| Client state  | Zustand (persisted to `localStorage`)                              |
+| Charts        | Recharts                                                           |
+| Maps          | Leaflet + React Leaflet + OpenStreetMap tiles                      |
+| Validation    | Zod                                                                |
+| Notifications | Sonner                                                             |
 
 ## Data sources
 
 All four endpoints are free, require **no API key**, and were verified against
 a live response before being wired in.
 
-| Source | Endpoint | Used for |
-| --- | --- | --- |
-| Open-Meteo Forecast | `api.open-meteo.com/v1/forecast` | Current conditions, hourly and daily forecast |
-| Open-Meteo Air Quality | `air-quality-api.open-meteo.com/v1/air-quality` | PM2.5, PM10, NO₂, O₃, European and US AQI |
-| Open-Meteo Geocoding | `geocoding-api.open-meteo.com/v1/search` | City and country search |
-| Data.gov.sg Traffic Images | `api.data.gov.sg/v1/transport/traffic-images` | Public traffic camera **snapshots** (8 cameras at the time of writing) |
+| Source                     | Endpoint                                        | Used for                                                               |
+| -------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| Open-Meteo Forecast        | `api.open-meteo.com/v1/forecast`                | Current conditions, hourly and daily forecast                          |
+| Open-Meteo Air Quality     | `air-quality-api.open-meteo.com/v1/air-quality` | PM2.5, PM10, NO₂, O₃, European and US AQI                              |
+| Open-Meteo Geocoding       | `geocoding-api.open-meteo.com/v1/search`        | City and country search                                                |
+| Data.gov.sg Traffic Images | `api.data.gov.sg/v1/transport/traffic-images`   | Public traffic camera **snapshots** (8 cameras at the time of writing) |
 
 Camera data consists of periodically refreshed JPEG snapshots, **not** live
 video streams, and the dashboard labels it as such. See [Attribution](#attribution).
@@ -51,8 +51,26 @@ Other scripts:
 npm run build        # production build
 npm run start        # serve the production build
 npm run lint         # ESLint
+npm run check:html   # scan served HTML for invalid nesting (app must be running)
 npx tsc --noEmit     # typecheck (run a build first so route types exist)
 ```
+
+### Checking for hydration bugs
+
+Invalid HTML nesting — an `<li>` inside an `<li>`, a `<main>` inside a
+`<main>` — makes the browser silently move the element, so the DOM stops matching
+the server-rendered string and React reports a hydration error. Neither
+`tsc` nor ESLint can see this, and the production build passes regardless.
+
+```bash
+npm run build && npm run start   # in one terminal
+npm run check:html               # in another
+```
+
+The script walks the real response body for every route and reports any
+forbidden parent/child pair it finds. Two real bugs were caught this way:
+a breadcrumb separator nested inside a breadcrumb item, and the dashboard
+layout adding its own `<main>` inside the one `SidebarInset` already renders.
 
 ## Environment variables
 
@@ -60,21 +78,24 @@ The application runs with **no environment variables at all** — every external
 API is keyless. The only optional variable is documented in
 [`.env.example`](.env.example):
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | No | Absolute base URL used for SEO metadata. Safe to omit on Vercel. |
+| Variable               | Required | Purpose                                                          |
+| ---------------------- | -------- | ---------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL` | No       | Absolute base URL used for SEO metadata. Safe to omit on Vercel. |
 
 ## Image handling
 
 Camera snapshots are rendered with a plain `<img>` element and deliberately
 **bypass the Next.js image optimizer**.
 
-Each snapshot URL carries a fresh UUID roughly every minute, so the optimizer
-would count every refresh as a new source image. Vercel's Hobby plan allows
+Each snapshot URL carries a fresh UUID, so every new snapshot counts as a new
+source image to the optimizer. The publication interval was measured rather
+than assumed — sampling one camera every 15s for 15 minutes gave capture times
+00:30:55, 00:35:55, 00:40:56 and 00:45:56, i.e. exactly 300s apart. With 8
+cameras that is ~96 new source images an hour. Vercel's Hobby plan allows
 [5,000 image transformations per month](https://vercel.com/docs/image-optimization/limits-and-pricing)
-and cannot purchase more, so a single visitor leaving the camera page open would
-exhaust the quota within hours — after which Vercel returns HTTP 402 and the
-images stop rendering entirely.
+and cannot purchase more, so roughly two days of continuous viewing would
+exhaust the quota — after which Vercel returns HTTP 402 and the images stop
+rendering entirely.
 
 Optimisation is still used for static assets. See the `images` note in
 [`next.config.ts`](next.config.ts).
@@ -147,7 +168,8 @@ Phase 6.
   licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - Traffic camera snapshots from [Data.gov.sg](https://data.gov.sg/), used under the
   [Singapore Open Data Licence](https://data.gov.sg/open-data-licence).
-- Map tiles © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors,
+- Base map tiles by [CARTO](https://carto.com/attributions), free for public use with attribution.
+- Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors,
   used in accordance with the
   [OSM Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/);
   attribution is displayed on every map.
